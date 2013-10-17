@@ -7,14 +7,10 @@ import re
 class TimeRecord:
 	"""Stores all information about a defined time tag, which should be extracted."""
 	
-	_pattern = ""
-	_sum = 0
-	_count = 0
-	_name = ""
-	
 	def __init__(self, pattern, name):
 		self._pattern = re.compile(pattern)
 		self._name = name
+		self._times = []
 		
 	@property
 	def pattern(self):
@@ -38,23 +34,39 @@ class TimeRecord:
 	@name.setter
 	def name(self, value):
 		self._name = value
-		
-	@property
-	def sum(self):
-		return self._sum
-	
+
 	def add_time(self, value):
-		self._sum += value
-		self._count += 1
+		self._times.append(value)
+		
+	def get_sum(self):
+		return sum(self._times) 
+	
+	def get_count(self):
+		return len(self._times)
 		
 	def get_average(self):
-		if(self._count == 0):
+		if(self.get_count() == 0):
 			return 0
-		return self._sum / self._count
-	
-	@property
-	def count(self):
-		return self._count
+		return self.get_sum() / self.get_count()
+
+	def get_median(self):
+		if(self.get_count() == 0):
+			return 0
+		self._times.sort()
+		return self._times[self.get_count() / 2]
+		
+	def remove_high_spikes(self, count=1):
+		self._times.sort()
+		while count > 0 and self.get_count() > 1:
+			self._times.pop()
+			count = count - 1
+			
+	def remove_low_spikes(self, count=1):
+		self._times.sort()
+		self._times.reverse()
+		while count > 0 and self.get_count() > 1:
+			self._times.pop()
+			count = count - 1
 
 
 def main():
@@ -66,9 +78,9 @@ def main():
 	
 	# TODO place your regex here to extract the times
 	records = []
-	records.append(TimeRecord('.*time_foo: (.*)', 'foo(): '))
-	records.append(TimeRecord('.*time_bar: (.*)', 'bar(): '))
-	records.append(TimeRecord('.*time_baz: (.*)', 'baz(): '))
+	records.append(TimeRecord('.*time_foo: (.*) ms', 'foo(): '))
+	records.append(TimeRecord('.*time_bar: (.*) ms', 'bar(): '))
+	records.append(TimeRecord('.*time_baz: (.*) ms', 'baz(): '))
 	
 	# Open file
 	file_in = open(args.input, 'r')
@@ -83,9 +95,10 @@ def main():
 	
 	# Write results
 	for rec in records:
-		file_out.write('Count ' + rec.name + str(rec.count) + '\n')
-		file_out.write('Time ' + rec.name + str(rec.sum) + '\n')
+		file_out.write('Count ' + rec.name + str(rec.get_count()) + '\n')
+		file_out.write('Time ' + rec.name + str(rec.get_sum()) + '\n')
 		file_out.write('Average ' + rec.name + str(rec.get_average()) + '\n')
+		file_out.write('Median ' + rec.name + str(rec.get_median()) + '\n')
 		file_out.write('\n')
 	
 	# Close file
